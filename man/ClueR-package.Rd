@@ -11,13 +11,15 @@ each cluster using Fisher's Exact Test and then test for overall enrichment of t
 combined probability test.
 
 CLUE is designed for analyzing time-course phosphoproteomics dataset using kinase-substrate annotation as reference. However, it can be applied to time-course microarray dataset as well by replacing the kinase-substrate annotation with gene sets annotation.
+
+Type '?runClue' for more details and examples on how to use CLUE.
 }
 \details{
 \tabular{ll}{
 Package: \tab CLUE\cr
 Type: \tab Package\cr
-Version: \tab 1.0\cr
-Date: \tab 2015-2-1\cr
+Version: \tab 1.1\cr
+Date: \tab 2015-10-17\cr
 License: \tab GPL-3\cr
 }
 
@@ -26,5 +28,5 @@ License: \tab GPL-3\cr
 Pengyi Yang
 }
 \references{
-Pengyi Yang, Xiaofeng Zheng, Vivek Jayaswal, Guang Hu, Yee Hwa Yang, Raja Jothi, Detecting key signaling events from time-series phosphoproteomics data, submitted.
+Pengyi Yang, Xiaofeng Zheng, Vivek Jayaswal, Guang Hu, Yee Hwa Yang, Raja Jothi (2015) Detecting key signaling events from time-series phosphoproteomics data, PLoS Computational Biology 11(8): e1004403. doi:10.1371/journal.pcbi.1004403.
 }

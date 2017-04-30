@@ -1,0 +1,4 @@
+Pathways: Pathways.DAVID Pathways.KEGG Pathways.biocarta Pathways.reactome
+PhosphoELM: PhosphoELM.human PhosphoELM.mouse
+PhosphoSite: PhosphoSite.human PhosphoSite.mouse
+hES

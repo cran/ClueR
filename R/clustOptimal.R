@@ -2,7 +2,7 @@
 #' 
 #' Takes a clue output and generate the optimal clustering of the time-course data.
 #' @param clueObj the output from runClue.
-#' @param rep number of times the clustering is to be applied to find the best clustering result.
+#' @param rep number of times (default is 5) the clustering is to be repeated to find the best clustering result.
 #' @param user.maxK user defined optimal k value for generating optimal clustering. If not provided, the optimal k that is identified by clue will be used.
 #' @param visualize a boolean parameter indicating whether to visualize the clustering results.
 #' @param ... pass additional parameter for controlling the plot if visualize is TRUE.
@@ -11,46 +11,39 @@
 #' @export
 #' @examples
 #' # simulate a time-series data with 4 distinctive profile groups and each group with
-#' # a size of 50 phosphorylation sites.
-#' simuData <- temporalSimu(seed=1, groupSize=50, sdd=1, numGroups=4)
+#' # a size of 50 phosphorylation sites. (not run)
+#' # simuData <- temporalSimu(seed=1, groupSize=50, sdd=1, numGroups=4)
 #' 
 #' # create an artificial annotation database. Generate 20 kinase-substrate groups each
 #' # comprising 10 substrates assigned to a kinase.
 #' # among them, create 4 groups each contains phosphorylation sites defined to have the
-#' # same temporal profile.
-#' kinaseAnno <- list()
-#' groupSize <- 50
-#' for (i in 1:4) {
-#'  kinaseAnno[[i]] <- paste("p", (groupSize*(i-1)+1):(groupSize*(i-1)+10), sep="_")
-#' }
+#' # same temporal profile. (not run)
+#' # kinaseAnno <- list()
+#' # groupSize <- 50
+#' # for (i in 1:4) {
+#' #  kinaseAnno[[i]] <- paste("p", (groupSize*(i-1)+1):(groupSize*(i-1)+10), sep="_")
+#' # }
 #'
-#' for (i in 5:20) {
-#'  set.seed(i)
-#'  kinaseAnno[[i]] <- paste("p", sample.int(nrow(simuData), size = 10), sep="_")
-#' }
-#' names(kinaseAnno) <- paste("KS", 1:20, sep="_")
+#' # for (i in 5:20) {
+#' #  set.seed(i)
+#' #  kinaseAnno[[i]] <- paste("p", sample.int(nrow(simuData), size = 10), sep="_")
+#' # }
+#' # names(kinaseAnno) <- paste("KS", 1:20, sep="_")
 #'
-#' # run CLUE with a repeat of 2 times and a range from 2 to 7
-#' set.seed(1)
-#' clueObj <- runClue(Tc=simuData, annotation=kinaseAnno, rep=5, kRange=7)
+#' # run CLUE with a repeat of 2 times and a range from 2 to 7 (not run)
+#' # set.seed(1)
+#' # clueObj <- runClue(Tc=simuData, annotation=kinaseAnno, rep=5, kRange=7)
 #' 
-#' # visualize the evaluation outcome
-#' Ms <- apply(clueObj$evlMat, 2, mean, na.rm=TRUE)
-#' Ss <- apply(clueObj$evlMat, 2, sd, na.rm=TRUE)
-#' library(Hmisc)
-#' errbar(1:length(Ms), Ms, Ms+Ss, Ms-Ss, cex=1.2, type="b", xaxt="n", xlab="k", ylab="E")
-#' axis(1, at=1:6, labels=paste("k=", 2:7, sep=""))
+#' # visualize the evaluation outcome (not run)
+#' # xl <- "Number of clusters"
+#' # yl <- "Enrichment score"
+#' # boxplot(clueObj$evlMat, col=rainbow(ncol(clueObj$evlMat)), las=2, xlab=xl, ylab=yl, main="CLUE")
+#' # abline(v=(clueObj$maxK-1), col=rgb(1,0,0,.3))
 #' 
-#' # generate optimal clustering results using the optimal k determined by CLUE
-#' best <- clustOptimal(clueObj, rep=3, mfrow=c(2, 3))
+#' # generate optimal clustering results using the optimal k determined by CLUE (not run)
+#' # best <- clustOptimal(clueObj, rep=3, mfrow=c(2, 3))
 #' 
-#' # list enriched clusters
-#' best$enrichList
-#' 
-#' # obtain the optimal clustering object (not run)
-#' # best$clustObj
-#' 
-clustOptimal <- function(clueObj, rep, user.maxK=NULL, visualize=TRUE, ...) {
+clustOptimal <- function(clueObj, rep=5, user.maxK=NULL, visualize=TRUE, ...) {
   
   bstPvalue <- 1
   bst.clustObj <- c()

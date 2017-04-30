@@ -9,10 +9,10 @@
 #' @return a matrix containing simulated time-series dataset.
 #' @export
 #' @examples
-#' # simulate a time-series data with four distinctive profile groups and each group with 
-#' # a size of 500 phosphorylation sites
+#' ## simulate a time-series data with four distinctive profile groups and each group with 
+#' ## a size of 500 phosphorylation sites (not run)
 #'
-#' simulated.temporal <- temporalSimu(seed=1, groupSize=500, sdd=1, numGroups=4)
+#' # simulated.temporal <- temporalSimu(seed=1, groupSize=500, sdd=1, numGroups=4)
 #' 
 temporalSimu <- function(seed=unclass(Sys.time()), groupSize, sdd, numGroups) {
    set.seed(seed)

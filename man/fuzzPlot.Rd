@@ -26,14 +26,11 @@ fuzzPlot(Tc, clustObj, mfrow = c(1, 1), cols, min.mem = 0,
 Takes in a time-course matrix and its clustering results as a cmeans clustering object. Produce a plot to visualize the clustering results.
 }
 \examples{
-## load the human ES phosphoprotoemics data (Rigbolt et al. Sci Signal. 4(164):rs3, 2011)
-## (not run)
-# data(hES)
-
-## apply cmeans clustering to partition the data into 11 clusters
-# library(e1071)
-# clustObj <- cmeans(hES, centers=11, iter.max=10, m=1.25)
-## visualize clustering reuslts
-# fuzzPlot(hES, clustObj, mfrow = c(3,4))
+# load the human ES phosphoprotoemics data (Rigbolt et al. Sci Signal. 4(164):rs3, 2011)
+data(hES)
+# apply cmeans clustering to partition the data into 11 clusters
+clustObj <- cmeans(hES, centers=11, iter.max=50, m=1.25)
+# visualize clustering reuslts
+fuzzPlot(hES, clustObj, mfrow = c(3,4))
 
 }

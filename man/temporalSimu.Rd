@@ -22,9 +22,9 @@ a matrix containing simulated time-series dataset.
 This function simulates time-series data using 14 pre-defined temporal profile templates. Type 'temporalSimu' to see the details of the templates.
 }
 \examples{
-## simulate a time-series data with four distinctive profile groups and each group with 
-## a size of 500 phosphorylation sites (not run)
+# simulate a time-series data with four distinctive profile groups and each group with 
+# a size of 500 phosphorylation sites
 
-# simulated.temporal <- temporalSimu(seed=1, groupSize=500, sdd=1, numGroups=4)
+simulated.temporal <- temporalSimu(seed=1, groupSize=500, sdd=1, numGroups=4)
 
 }

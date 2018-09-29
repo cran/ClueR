@@ -53,15 +53,14 @@ for (i in 6:100) {
 }
 names(kinaseAnno) <- paste("KS", 1:100, sep="_")
 
-# run CLUE with a repeat of 5 times and a range from 2 to 20
+# run CLUE with a repeat of 5 times and a range from 2 to 10
 set.seed(2)
-clueObj <- runClue(Tc=simuData, annotation=kinaseAnno, rep=5, kRange=20)
+clueObj <- runClue(Tc=simuData, annotation=kinaseAnno, rep=5, kRange=2:10)
 
 # visualize the evaluation outcome
 xl <- "Number of clusters"
 yl <- "Enrichment score"
 boxplot(clueObj$evlMat, col=rainbow(ncol(clueObj$evlMat)), las=2, xlab=xl, ylab=yl, main="CLUE")
-abline(v=(clueObj$maxK-1), col=rgb(1,0,0,.3))
 
 # generate optimal clustering results using the optimal k determined by CLUE
 best <- clustOptimal(clueObj, rep=5, mfrow=c(2, 3))
@@ -89,13 +88,12 @@ data(PhosphoSite)
 
 # run CLUE with a repeat of 5 times and a range from 2 to 20
 set.seed(2)
-clueObj <- runClue(Tc=hES, annotation=PhosphoSite.human, rep=5, kRange=20)
+clueObj <- runClue(Tc=hES, annotation=PhosphoSite.human, rep=5, kRange=2:20)
 
 # visualize the evaluation outcome
 xl <- "Number of clusters"
 yl <- "Enrichment score"
 boxplot(clueObj$evlMat, col=rainbow(ncol(clueObj$evlMat)), las=2, xlab=xl, ylab=yl, main="CLUE")
-abline(v=(clueObj$maxK-1), col=rgb(1,0,0,.3))
 
 # generate the optimal clustering results
 best <- clustOptimal(clueObj, rep=5, mfrow=c(3, 4))
@@ -116,18 +114,20 @@ data(adipocyte)
 # load the KEGG annotations. note that one can instead use reactome, GOBP, biocarta database
 data(Pathways)
 
-# run CLUE with a repeat of 3 times and a range from 2 to 13
+# select genes that are differentially expressed during adipocyte differentiation
+adipocyte.selected <- adipocyte[adipocyte[,"DE"] == 1,]
+
+# run CLUE with a repeat of 3 times and a range from 10 to 22
 set.seed(3)
-clueObj <- runClue(Tc=adipocyte, annotation=Pathways.KEGG, rep=3, kRange=13)
+clueObj <- runClue(Tc=adipocyte.selected, annotation=Pathways.KEGG, rep=3, kRange=10:20)
 
 # visualize the evaluation outcome
 xl <- "Number of clusters"
 yl <- "Enrichment score"
 boxplot(clueObj$evlMat, col=rainbow(ncol(clueObj$evlMat)), las=2, xlab=xl, ylab=yl, main="CLUE")
-abline(v=(clueObj$maxK-1), col=rgb(1,0,0,.3))
 
 # generate the optimal clustering results
-best <- clustOptimal(clueObj, rep=5, mfrow=c(3, 3))
+best <- clustOptimal(clueObj, rep=5, mfrow=c(4, 5))
 
 # list enriched clusters
 best$enrichList

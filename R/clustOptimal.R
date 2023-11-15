@@ -5,8 +5,14 @@
 #' @param rep number of times (default is 5) the clustering is to be repeated to find the best clustering result.
 #' @param user.maxK user defined optimal k value for generating optimal clustering. If not provided, the optimal k that is identified by clue will be used.
 #' @param visualize a boolean parameter indicating whether to visualize the clustering results.
-#' @param ... pass additional parameter for controlling the plot if visualize is TRUE.
+#' @param effectiveSize the size of kinase-substrate groups to be considered for calculating enrichment. Groups that are too small
+#' or too large will be removed from calculating overall enrichment of the clustering.
+#' @param pvalueCutoff a pvalue cutoff for determining which kinase-substrate groups to be included in calculating overall enrichment of the clustering.
+#' @param universe the universe of genes/proteins/phosphosites etc. that the enrichment is calculated against. The default are the row names of the dataset.
+#' @param mfrow control the subplots in graphic window.
 #' @return return a list containing optimal clustering object and enriched kinases or gene sets. 
+#'
+#' @import stats
 #'
 #' @export
 #' @examples
@@ -32,7 +38,7 @@
 #'
 #' # run CLUE with a repeat of 2 times and a range from 2 to 7
 #' set.seed(1)
-#' clueObj <- runClue(Tc=simuData, annotation=kinaseAnno, rep=5, kRange=7)
+#' clueObj <- runClue(Tc=simuData, annotation=kinaseAnno, rep=5, kRange=2:7)
 #' 
 #' # visualize the evaluation outcome
 #' xl <- "Number of clusters"
@@ -51,54 +57,77 @@
 #'   best$clustObj
 #' }
 #' 
-clustOptimal <- function(clueObj, rep=5, user.maxK=NULL, visualize=TRUE, ...) {
+#' 
+clustOptimal <- function(clueObj, rep=5, user.maxK=NULL, effectiveSize=NULL, pvalueCutoff=0.05, visualize=TRUE, universe=NULL, mfrow = c(1, 1)) {
   
   bstPvalue <- 1
-  bst.clustObj <- c()
+  bst.cobj <- c()
   bst.evaluation <- c()
   for(i in 1:rep) {
-    clustObj <- c()
+    cobj <- c()
     if (clueObj$clustAlg == "cmeans") {
       if (is.null(user.maxK)) {
         # use clue determined max k value
-        clustObj <- cmeans(clueObj$Tc, centers=clueObj$maxK, iter.max=50, m=1.25)
+        cobj <- e1071::cmeans(clueObj$Tc, centers=clueObj$maxK, iter.max=50, m=1.25)
       } else {
         # use user specific k value
-        clustObj <- cmeans(clueObj$Tc, centers=user.maxK, iter.max=50, m=1.25)
+        cobj <- e1071::cmeans(clueObj$Tc, centers=user.maxK, iter.max=50, m=1.25)
       }
     } else {
       if (is.null(user.maxK)) {
         # use clue determined max k value
-        clustObj <- kmeans(clueObj$Tc, centers=clueObj$maxK, iter.max=50)
-        # set the membership as 1 for all partitions
-        clustObj$membership <- matrix(1, nrow=nrow(clueObj$Tc), ncol=nrow(clustObj$centers))
-        rownames(clustObj$membership) <- names(clustObj$cluster)
+        cobj <- stats::kmeans(clueObj$Tc, centers=clueObj$maxK, iter.max=50)
+        # set the membership as the normalised distance to the mean of the cluster
+        cobj$membership <- matrix(NA, nrow=nrow(clueObj$Tc), ncol=nrow(cobj$centers))
+        
+        for(i in 1:ncol(cobj$membership)) {
+          cobj$membership[,i] <- (as.numeric(stats::cor(t(clueObj$Tc), cobj$centers[i,])) + 1)/2
+        }
+        rownames(cobj$membership) <- names(cobj$cluster)
         
       } else {
         # use user specific k value
-        clustObj <- kmeans(clueObj$Tc, centers=user.maxK, iter.max=50)
-        # set the membership as 1 for all partitions
-        clustObj$membership <- matrix(1, nrow=nrow(clueObj$Tc), ncol=nrow(clustObj$centers))
-        rownames(clustObj$membership) <- names(clustObj$cluster)
+        cobj <- stats::kmeans(clueObj$Tc, centers=user.maxK, iter.max=50)
+        # set the membership as the normalised distance to the mean of the cluster
+        cobj$membership <- matrix(NA, nrow=nrow(clueObj$Tc), ncol=nrow(cobj$centers))
+        
+        for(i in 1:ncol(cobj$membership)) {
+          cobj$membership[,i] <- (as.numeric(cor(t(clueObj$Tc), cobj$centers[i,])) + 1)/2
+        }
+        rownames(cobj$membership) <- names(cobj$cluster)
+        
       }
     }
     
-    evaluation <- clustEnrichment(clustObj, clueObj$annotation, clueObj$effectiveSize, clueObj$pvalueCutoff)
-    currentPvalue <- evaluation$fisher.pvalue
-    
+    evaluation <- c()
+    currentPvalue <- c()
+    if (!is.null(clueObj$effectiveSizeK) & !is.null(clueObj$pvalueCutoff)) {
+      evaluation <- clustEnrichment(cobj, clueObj$annotation, effectiveSize, pvalueCutoff, universe)
+      currentPvalue <- evaluation$fisher.pvalue
+    } else if (!is.null(clueObj$effectiveSizeK) & is.null(clueObj$pvalueCutoff)) {
+      evaluation <- clustEnrichment(cobj, clueObj$annotation, effectiveSize, clueObj$pvalueCutoff, universe)
+      currentPvalue <- evaluation$fisher.pvalue
+    } else if (is.null(clueObj$effectiveSizeK) & !is.null(clueObj$pvalueCutoff)) {
+      evaluation <- clustEnrichment(cobj, clueObj$annotation, clueObj$effectiveSize, pvalueCutoff, universe)
+      currentPvalue <- evaluation$fisher.pvalue
+    } else {
+      evaluation <- clustEnrichment(cobj, clueObj$annotation, clueObj$effectiveSize, clueObj$pvalueCutoff, universe)
+      currentPvalue <- evaluation$fisher.pvalue
+    }
+      
     if (currentPvalue < bstPvalue) {
       bstPvalue <- currentPvalue
-      bst.clustObj <- clustObj
+      bst.cobj <- cobj
       bst.enrichList <- evaluation$enrich.list
     }
   }
   
   if(visualize) {
-    fuzzPlot(clueObj$Tc, clustObj = bst.clustObj, ...)
+    fuzzPlot(clueObj$Tc, clustObj = bst.cobj, mfrow)
   }
   
   results <- list()
-  results$clustObj <- bst.clustObj
+  results$clustObj <- bst.cobj
   results$enrichList <- bst.enrichList
   return(results)
 }

@@ -10,10 +10,12 @@
 #' @param alter indicates the alternative hypothesis and must be one of "two.sided", "greater" or "less"
 #' @return a matrix that contains enrichment of each kinase based on the input name vector.
 #' 
+#' @import stats
+#' 
 #' @export
 #' 
 enrichmentTest <- function(clust, annotation, universe, alter="greater") {
-  
+
   fisherTest.mat <- matrix("NA", ncol=4, nrow=length(annotation))
   colnames(fisherTest.mat) <- c("kinase", "pvalue", "# of substrates", "substrates")
   for (i in 1:length(annotation)) {
@@ -22,7 +24,7 @@ enrichmentTest <- function(clust, annotation, universe, alter="greater") {
     ndi <- length(setdiff(annotation[[i]], clust))
     ndn <- length(setdiff(universe, union(clust, annotation[[i]])))
     
-    p <- fisher.test(rbind(c(di, ndi), c(dn, ndn)), alternative=alter)$p.value
+    p <- stats::fisher.test(rbind(c(di, ndi), c(dn, ndn)), alternative=alter)$p.value
     substrates <- paste(intersect(clust, annotation[[i]]), collapse="|")
     fisherTest.mat[i,] <- c(names(annotation)[i], p, di, substrates)
   }

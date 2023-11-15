@@ -10,7 +10,12 @@
 #' or too large will be removed from calculating overall enrichment of the clustering.
 #' @param pvalueCutoff a pvalue cutoff for determining which kinase-substrate groups to be included in calculating overall enrichment of the clustering.
 #' @param alpha a regularisation factor for penalizing large number of clusters.
+#' @param standardise whether to z-score standardise the input matrix.
+#' @param universe the universe of genes/proteins/phosphosites etc. that the enrichment is calculated against. The default are the row names of the dataset.
 #' @return a clue output that contains the input parameters used for evaluation and the evaluation results. Use ls(x) to see details of output. 'x' be the output here.
+#' 
+#' @import stats
+#' 
 #' @export
 #' @examples
 #' ## Example 1. Running CLUE with a simulated phosphoproteomics data
@@ -38,7 +43,8 @@
 #' 
 #' ## run CLUE with a repeat of 3 times and a range from 2 to 8
 #' set.seed(1)
-#' cl <- runClue(Tc=simuData, annotation=kinaseAnno, rep=3, kRange=2:8)
+#' cl <- runClue(Tc=simuData, annotation=kinaseAnno, rep=3, kRange=2:8, 
+#'               standardise = TRUE, universe = NULL)
 #' 
 #' ## visualize the evaluation outcome
 #' boxplot(cl$evlMat, col=rainbow(8), las=2, xlab="# cluster", ylab="Enrichment", main="CLUE")
@@ -63,7 +69,8 @@
 #' 
 #' ## run CLUE with a repeat of 5 times and a range from 2 to 15
 #' \donttest{set.seed(1)
-#' cl <- runClue(Tc=hES, annotation=PhosphoSite.human, rep=5, kRange=2:15)
+#' cl <- runClue(Tc=hES, annotation=PhosphoSite.human, rep=5, kRange=2:15, 
+#'               standardise = TRUE, universe = NULL)
 #' 
 #' boxplot(cl$evlMat, col=rainbow(15), las=2, xlab="# cluster", ylab="Enrichment", main="CLUE")
 #' 
@@ -88,45 +95,53 @@
 #' ## run CLUE with a repeat of 5 times and a range from 10 to 22
 #' \donttest{
 #' set.seed(3)
-#' cl <- runClue(Tc=adipocyte.selected, annotation=Pathways.KEGG, rep=3, kRange=10:20)
+#' cl <- runClue(Tc=adipocyte.selected, annotation=Pathways.KEGG, rep=3, kRange=10:20, 
+#'               standardise = TRUE, universe = NULL)
 #' 
 #' xl <- "Number of clusters"
 #' yl <- "Enrichment score"
 #' boxplot(cl$evlMat, col=rainbow(ncol(cl$evlMat)), las=2, xlab=xl, ylab=yl, main="CLUE")}
 #' 
-runClue <- function(Tc, annotation, rep=5, kRange=2:10, clustAlg="cmeans", effectiveSize=c(5, 100), pvalueCutoff=0.05, alpha=0.5) {
+runClue <- function(Tc, annotation, rep=5, kRange=2:10, clustAlg="cmeans", effectiveSize=c(5, 100), pvalueCutoff=0.05, alpha=0.5, standardise=TRUE, universe=NULL) {
   
   # standardize the matrix by row
-  means <- apply(Tc, 1, mean)
-  stds <- apply(Tc, 1, sd)
-  tmp <- sweep(Tc, 1, means, FUN="-")
-  Tc <- sweep(tmp, 1, stds, FUN="/")
+  if(isTRUE(standardise)) {
+    means <- apply(Tc, 1, mean)
+    stds <- apply(Tc, 1, stats::sd)
+    tmp <- sweep(Tc, 1, means, FUN="-")
+    Tc <- sweep(tmp, 1, stds, FUN="/")
+  }
   
   ## filter the annotation groups that has no entry from the Tc
   annotation.intersect <- lapply(annotation, intersect, rownames(Tc))
   annotation.filtered <- annotation.intersect[lapply(annotation.intersect, length) > 0]
   
   # apply CLUE
-  repeat.list <- mclapply(1:rep, function(rp){
+  repeat.list <- parallel::mclapply(1:rep, function(rp){
     cat("repeat", rp, "\n");
     enrichment <- c()
     for (k in kRange) {
       clustered <- c()
       if (clustAlg == "cmeans") {
-        clustered <- cmeans(Tc, centers=k, iter.max=50, m=1.25)
+        clustered <- e1071::cmeans(Tc, centers=k, iter.max=50, m=1.25)
       } else if (clustAlg == "kmeans"){
-        clustered <- kmeans(Tc, centers=k, iter.max=50)
+        clustered <- stats::kmeans(Tc, centers=k, iter.max=50)
       } else {
         print("Unknown clustering algorithm specified. Using cmeans clustering instead")
-        clustered <- cmeans(Tc, centers=k, iter.max=50, m=1.25)
+        clustered <- e1071::cmeans(Tc, centers=k, iter.max=50, m=1.25)
       }
       
       # compute fisher's p-value for each cluster
-      evaluate <- clustEnrichment(clustered, annotation.filtered, effectiveSize, pvalueCutoff)
+      evaluate <- clustEnrichment(clustered, annotation.filtered, effectiveSize, pvalueCutoff, universe)
       fisher.pvalue <- evaluate$fisher.pvalue
       
       # compute clustering enrichment (this is regularised by the number of clusters) 
-      escore <- -log10(fisher.pvalue) - alpha * nrow(clustered$centers)
+      escore <- c()
+      if (fisher.pvalue == 0) {
+        escore <- -log10(.Machine$double.xmin) - alpha * nrow(clustered$centers)
+      } else {
+        escore <- -log10(fisher.pvalue) - alpha * nrow(clustered$centers)
+      }
       
       enrichment <- c(enrichment, escore)
     }
